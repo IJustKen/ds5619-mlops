@@ -101,8 +101,43 @@ def run_pipeline(config):
     n_high_value, high_value_threshold), and write them as JSON to
     config["output_path"]. Return the report dict as well.
     """
-    # TODO: implement
-    raise NotImplementedError("run_pipeline is not implemented yet")
+    data = load_transactions(path=config["input_path"], fmt=config["input_format"])
+
+    # getting these from config instead of hardcoding this time
+    HIGH_VALUE_THRESHOLD = config["high_value_threshold"]
+    OUTPUT_PATH = config["output_path"]
+
+    # the following part is pretty much copied from the `pipeline_hardcoded.py` file
+    n = len(data)
+    total_amount = sum(float(r["amount"]) for r in data)
+
+    # except for this part since json.load() converts string "true" to python boolean True
+    # while csv.DictReader() does not do so
+    # since the load_transactions allowed for string or boolean both, I have handled it here
+    try:
+        n_fraud = sum(1 for r in data if (isinstance(r["is_fraud"], str) and r["is_fraud"].lower() == "true") or (isinstance(r["is_fraud"], bool) and r["is_fraud"] == True))
+    except Exception as e:
+        raise ValueError(f"Error in data: {e}")
+    # PS: i am not accounting for when data has Yes, Y, T etc. since it is not mentioned
+
+    # amount can also be both float or string, but float(r["amount"]) anyway handles it and gives the appropriate float value
+    try:
+        n_high_value = sum(1 for r in data if float(r["amount"]) > HIGH_VALUE_THRESHOLD)
+    except Exception as e:
+        raise ValueError(f"Error in data: {e}")
+
+    report = {
+        "n_transactions": n,
+        "total_amount": round(total_amount, 2),
+        "fraud_rate": round(n_fraud / n, 4) if n else 0.0,
+        "n_high_value": n_high_value,
+        "high_value_threshold": HIGH_VALUE_THRESHOLD,
+    }
+
+    with open(OUTPUT_PATH, "w") as f:
+        json.dump(report, f, indent=2)
+    print(f"Wrote report to {OUTPUT_PATH}")
+    return report
 
 
 def main():
