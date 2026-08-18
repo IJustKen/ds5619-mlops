@@ -57,15 +57,18 @@ def run_etl(config):
 
     all_violations = []
 
+    # each function is ran for the given arguments
     for exp_fn, args in build_expectation_suite():
         violations = exp_fn(rows, **args)
         all_violations.extend(violations)
 
+    # any row with a violation
     quarantined_indices = {v.row_index for v in all_violations}
 
     clean_rows = []
     quarantined_rows = []
 
+    # segregating good vs bad rows
     for i in range(len(rows)):
         if i in quarantined_indices:
             quarantined_rows.append(rows[i])
@@ -73,6 +76,7 @@ def run_etl(config):
         else:
             clean_rows.append(rows[i])
 
+    # creating the .csv for both 
     with open(config["clean_output_path"], "w", newline="") as f:
         writer = csv.DictWriter(f, fieldnames=rows[0].keys())
         writer.writeheader()
@@ -83,6 +87,7 @@ def run_etl(config):
         writer.writeheader()
         writer.writerows(quarantined_rows)
 
+    # creating and dumping the JSON report
     report = {}
 
     for violation in all_violations:
@@ -90,17 +95,20 @@ def run_etl(config):
             # first case found
             report[violation.expectation] = {
                 "violation_count": 0,
-                "row_indices": []
+                "row_indices": []#,
+                #"columns": []
             }
         # else just increment
         report[violation.expectation]["violation_count"] += 1
         report[violation.expectation]["row_indices"].append(violation.row_index)
+        #report[violation.expectation]["columns"].append(violation.column)
+
 
     with open(config["report_output_path"], "w") as f:
         json.dump(report, f, indent=2)
 
     print("Wrote to .JSON file")
-    
+
     return report
 
 def main():
