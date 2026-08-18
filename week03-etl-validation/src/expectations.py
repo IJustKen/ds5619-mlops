@@ -44,8 +44,34 @@ def expect_column_positive(rows, column):
     is not strictly greater than 0. If the value can't be cast to float at
     all, that also counts as a violation (detail should say so).
     """
-    # TODO: implement
-    raise NotImplementedError
+    violations = []
+
+    for i in range(len(rows)):
+        convertible = True
+        try:
+            value = float(rows[i][column])
+
+        except ValueError:
+            convertible = False
+            violation_obj = Violation(
+                expectation="expect_column_positive",
+                column=column,
+                row_index=i,
+                detail=f"This record contains a value that could not be converted to a float for the column {column}"
+            )
+            violations.append(violation_obj)
+        if convertible:
+            if value <= 0:
+                violation_obj = Violation(
+                        expectation="expect_column_positive",
+                        column=column,
+                        row_index=i,
+                        detail=f"This record contains a non positive number for the column {column}"
+                    )
+                violations.append(violation_obj)
+
+    return violations
+
 
 
 def expect_column_in_set(rows, column, allowed_values):
