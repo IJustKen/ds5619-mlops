@@ -97,5 +97,22 @@ def expect_column_unique(rows, column):
     already seen in `column`. (i.e. if three rows share a value, rows 2 and 3
     are violations; row 1 is not.)
     """
-    # TODO: implement
-    raise NotImplementedError
+    values_seen = dict()
+    violations = []
+
+    for i in range(len(rows)):
+        value = rows[i][column]
+        if value in values_seen:
+            violation_obj = Violation(
+                expectation="expect_column_unique",
+                column=column,
+                row_index=i,
+                detail=f"Column {column} contains a value that was already encountered in record {values_seen[value]}"
+            )
+            violations.append(violation_obj)
+
+        else:
+            values_seen[value] = i
+
+    return violations
+        
