@@ -24,8 +24,19 @@ def _is_null(value):
 
 def expect_column_not_null(rows, column):
     """Return a Violation for every row where rows[i][column] is null/empty."""
-    # TODO: implement
-    raise NotImplementedError
+    violations = []
+
+    for i in range(len(rows)):
+        if _is_null(rows[i][column]):
+            violation_obj = Violation(
+                expectation="expect_column_not_null",
+                column = column,
+                row_index=i,
+                detail=f"This record contains a null value for the column {column}"
+                )
+            violations.append(violation_obj)
+
+    return violations
 
 
 def expect_column_positive(rows, column):
