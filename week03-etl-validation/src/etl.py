@@ -53,9 +53,55 @@ def run_etl(config):
 
     Return the validation_report dict as well as writing it to disk.
     """
-    # TODO: implement
-    raise NotImplementedError
+    rows = extract(config["input_path"])
 
+    all_violations = []
+
+    for exp_fn, args in build_expectation_suite():
+        violations = exp_fn(rows, **args)
+        all_violations.extend(violations)
+
+    quarantined_indices = {v.row_index for v in all_violations}
+
+    clean_rows = []
+    quarantined_rows = []
+
+    for i in range(len(rows)):
+        if i in quarantined_indices:
+            quarantined_rows.append(rows[i])
+
+        else:
+            clean_rows.append(rows[i])
+
+    with open(config["clean_output_path"], "w", newline="") as f:
+        writer = csv.DictWriter(f, fieldnames=rows[0].keys())
+        writer.writeheader()
+        writer.writerows(clean_rows)
+
+    with open(config["quarantine_output_path"], "w", newline="") as f:
+        writer = csv.DictWriter(f, fieldnames=rows[0].keys())
+        writer.writeheader()
+        writer.writerows(quarantined_rows)
+
+    report = {}
+
+    for violation in all_violations:
+        if violation.expectation not in report:
+            # first case found
+            report[violation.expectation] = {
+                "violation_count": 0,
+                "row_indices": []
+            }
+        # else just increment
+        report[violation.expectation]["violation_count"] += 1
+        report[violation.expectation]["row_indices"].append(violation.row_index)
+
+    with open(config["report_output_path"], "w") as f:
+        json.dump(report, f, indent=2)
+
+    print("Wrote to .JSON file")
+    
+    return report
 
 def main():
     parser = argparse.ArgumentParser()
