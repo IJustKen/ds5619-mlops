@@ -78,9 +78,19 @@ def expect_column_in_set(rows, column, allowed_values):
     """Return a Violation for every row where rows[i][column] is not a member
     of allowed_values (a set or list you're given).
     """
-    # TODO: implement
-    raise NotImplementedError
+    violations = []
 
+    for i in range(len(rows)):
+        if rows[i][column] not in allowed_values:
+            violation_obj = Violation(
+                expectation="expect_column_in_set",
+                column=column,
+                row_index=i,
+                detail=f"For this record, the value in column {column} is not in the allowed values"
+            )
+            violations.append(violation_obj)
+
+    return violations
 
 def expect_column_unique(rows, column):
     """Return a Violation for every row AFTER THE FIRST that repeats a value
