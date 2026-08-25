@@ -1,7 +1,7 @@
 # NOTES.md — Week 4: Versioning, Feature Store & Lineage
 
 **Student ID used with `generate_for_student.py`:**
-<!-- paste the --student-id value you used -->
+142301038
 
 
 ## v1 vs. v2 manifest comparison
