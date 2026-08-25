@@ -112,7 +112,7 @@ def snapshot_raw_version(input_path, registry_dir):
         "source_path": input_path,
         "content_hash": hash_val,
         "columns": columns,
-        "num_rows": len(rows),
+        "row_count": len(rows),
         "created_at": _now()
     }
 
@@ -186,7 +186,7 @@ def build_features(rows):
 
         pct_card_present = round(card_present_count / txn_count, 3)
 
-        event_time = max(row["event_time"] for row in card_rows)
+        event_time = max(row["timestamp"] for row in card_rows)
 
         # return format requested, list of dictionary per card_id
         feature_rows.append({
@@ -227,9 +227,38 @@ def register_feature_group(name, feature_rows, source_version_id, registry_dir, 
            created_at (use _now()).
       5. Return fg_version_id (str).
     """
-    # TODO: implement
-    raise NotImplementedError
+    feature_groups_dir = os.path.join(registry_dir, "feature_groups", name)
 
+    fg_version_id = _next_version_id(feature_groups_dir)    # get the appropriate required version id
+
+    version_dir = os.path.join(feature_groups_dir, fg_version_id)
+
+    os.makedirs(version_dir, exist_ok=True)
+
+    # Write the feature rows
+    features_path = os.path.join(version_dir, "features.json")
+
+    with open(features_path, "w") as f:
+        json.dump(feature_rows, f, indent=2)
+
+    # Build the feature group json file of the manifest
+    manifest = {
+        "feature_group_version_id": fg_version_id,
+        "name": name,
+        "source_raw_version_id": source_version_id,
+        "transform_version": transform_version,
+        "schema": sorted(feature_rows[0].keys()),
+        "row_count": len(feature_rows),
+        "created_at": _now(),
+    }
+
+    # Write the manifest for the feature group
+    manifest_path = os.path.join(version_dir, "manifest.json")
+
+    with open(manifest_path, "w") as f:
+        json.dump(manifest, f, indent=2)
+
+    return fg_version_id
 
 # ---------------------------------------------------------------------------
 # Part 4 — Lineage lookup
@@ -249,5 +278,22 @@ def get_lineage(name, fg_version_id, registry_dir):
     FileNotFoundError (the default behavior of open() on a missing file is
     fine — don't catch it) if either manifest is missing.
     """
-    # TODO: implement
-    raise NotImplementedError
+    # Read feature group manifest, create path accordingly
+    fg_manifest_path = os.path.join(registry_dir, "feature_groups", name, fg_version_id, "manifest.json")
+
+    with open(fg_manifest_path) as f:
+        feature_group_manifest = json.load(f)
+
+    # Get the raw version this feature group came from
+    source_version_id = feature_group_manifest["source_raw_version_id"]
+
+    # Read raw data manifest
+    raw_manifest_path = os.path.join(registry_dir, "raw_versions", source_version_id,"manifest.json")
+
+    with open(raw_manifest_path) as f:  # read
+        raw_manifest = json.load(f)
+
+    return {
+        "feature_group": feature_group_manifest,
+        "raw_source": raw_manifest
+    }
