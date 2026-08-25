@@ -80,12 +80,48 @@ def snapshot_raw_version(input_path, registry_dir):
     """
 
     hash_val = content_hash(input_path)
-    directories = os.listdir(registry_dir)
-    print(directories)
 
+    raw_versions_dir = os.path.join(registry_dir, "raw_versions")   # assuming directory does not exist
+    # but i checked the zip file these folders are already present somehow; odd
 
+    # Check existing versions for the same content hash
+    if os.path.isdir(raw_versions_dir):
+        for version_id in os.listdir(raw_versions_dir):
+            manifest_path = os.path.join(raw_versions_dir, version_id, "manifest.json")
 
+            if os.path.isfile(manifest_path):   # check if file exists
+                with open(manifest_path) as f:
+                    manifest = json.load(f)
 
+                if manifest["content_hash"] == hash_val:
+                    return manifest["version_id"]
+
+    # No matching version found, so create a new one
+    version_id = _next_version_id(raw_versions_dir)
+
+    version_dir = os.path.join(raw_versions_dir, version_id)    # path of the version directory inside the registry dir
+    os.makedirs(version_dir, exist_ok=True)
+
+    # Read CSV 
+    rows = _read_csv_rows(input_path)
+
+    columns = list(rows[0].keys())  # first entry will be the column names
+
+    manifest = {
+        "version_id": version_id,
+        "source_path": input_path,
+        "content_hash": hash_val,
+        "columns": columns,
+        "num_rows": len(rows),
+        "created_at": _now()
+    }
+
+    manifest_path = os.path.join(version_dir, "manifest.json")  # path of the manifest file inside the intended version directory
+
+    with open(manifest_path, "w") as f:
+        json.dump(manifest, f, indent=2)
+
+    return version_id
 
 # ---------------------------------------------------------------------------
 # Part 2 — Feature engineering (must handle the v1 -> v2 schema change)
@@ -116,8 +152,53 @@ def build_features(rows):
 
     Return: list of feature row dicts, one per card_id, in any order.
     """
-    # TODO: implement
-    raise NotImplementedError
+    # Group transactions by card_id
+    grouped = {}
+
+    for row in rows:
+        card_id = row["card_id"]
+
+        if card_id not in grouped:
+            grouped[card_id] = []
+
+        grouped[card_id].append(row)
+
+    feature_rows = []
+
+    # Building features for each card
+    for card_id, card_rows in grouped.items():
+
+        amounts = []
+
+        for row in card_rows:
+            if "country_code" in row:   # v2 has this I think, in cents as mentioned in ques
+                amount = float(row["amount_minor_units"]) / 100
+            else:
+                amount = float(row["amount"])   # this is from v1 
+
+            amounts.append(amount)
+
+        txn_count = len(card_rows)
+        avg_amount = round(sum(amounts) / txn_count, 2)
+        max_amount = round(max(amounts), 2)
+
+        card_present_count = sum(1 for row in card_rows if row["card_present"] == "True")   # it will not be boolean btw
+
+        pct_card_present = round(card_present_count / txn_count, 3)
+
+        event_time = max(row["event_time"] for row in card_rows)
+
+        # return format requested, list of dictionary per card_id
+        feature_rows.append({
+            "card_id": card_id,
+            "txn_count": txn_count,
+            "avg_amount": avg_amount,
+            "max_amount": max_amount,
+            "pct_card_present": pct_card_present,
+            "event_time": event_time,
+        })
+
+    return feature_rows
 
 
 # ---------------------------------------------------------------------------
