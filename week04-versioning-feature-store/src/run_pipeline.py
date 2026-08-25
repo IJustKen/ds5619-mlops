@@ -32,6 +32,7 @@ def _rows_from(path):
 
 
 def main():
+    print(REGISTRY_DIR)
     v1_path = os.path.join(REPO_ROOT, "data", "v1", "transactions.csv")
     v2_path = os.path.join(REPO_ROOT, "data", "v2", "transactions.csv")
 

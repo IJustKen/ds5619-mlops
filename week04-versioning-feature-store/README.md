@@ -111,3 +111,6 @@ git push origin main --tags
 Source: this lab operationalizes the Data Versioning, Feature Store (FTI
 architecture, feature groups), and Data Lineage content from the Week 4
 lecture deck.
+
+
+## Approach Used

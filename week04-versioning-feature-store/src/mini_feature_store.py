@@ -58,6 +58,7 @@ def _next_version_id(existing_dir):
 # ---------------------------------------------------------------------------
 
 def snapshot_raw_version(input_path, registry_dir):
+    
     """Register `input_path` as a new raw data version under
     `registry_dir/raw_versions/`.
 
@@ -77,8 +78,13 @@ def snapshot_raw_version(input_path, registry_dir):
            CSV header), row_count, created_at (use _now()).
       5. Return the version_id (str).
     """
-    # TODO: implement
-    raise NotImplementedError
+
+    hash_val = content_hash(input_path)
+    directories = os.listdir(registry_dir)
+    print(directories)
+
+
+
 
 
 # ---------------------------------------------------------------------------
