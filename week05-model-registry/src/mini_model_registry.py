@@ -124,8 +124,46 @@ def generate_model_card(name, version_id, card_fields, registry_dir):
          card_fields, metrics (from step 2), created_at (use _now()).
       4. Return the path you wrote to.
     """
-    # TODO: implement
-    raise NotImplementedError
+    # Validate the required card fields
+    for field in REQUIRED_CARD_FIELDS:
+        if field not in card_fields:
+            raise ValueError(f"Missing required field: {field}")
+
+        value = card_fields[field]
+
+        if not value.strip():   # check for empty/whitespace-only string
+            raise ValueError(f"Invalid value for field: {field}")
+
+        if "TODO" in value: # check for value being == "TODO", basically field has not been filled yet
+            raise ValueError(f"TODO found in field: {field}")
+
+    # Read the existing manifest.json
+    model_dir = _model_dir(registry_dir, name, version_id)
+    manifest_path = os.path.join(model_dir, "manifest.json")
+
+    with open(manifest_path, "r") as f:
+        manifest = json.load(f)
+
+    metrics = manifest["metrics"]
+
+    # Create and write model card
+    model_card = {
+        "name": name,
+        "version_id": version_id,
+        "metrics": metrics,
+        "created_at": _now()
+    }
+    # fields from card_fields also should be included
+    for k,v in card_fields.items():
+        model_card[k] = v
+
+    card_path = os.path.join(model_dir, "model_card.json")
+
+    with open(card_path, "w") as f:
+        json.dump(model_card, f, indent=2)
+
+    # Return the path
+    return card_path
 
 
 # ---------------------------------------------------------------------------
