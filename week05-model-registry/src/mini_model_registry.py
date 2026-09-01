@@ -68,8 +68,36 @@ def register_model(name, model_path, metrics, registry_dir):
            created_at (use _now()).
       5. Return version_id (str).
     """
-    # TODO: implement
-    raise NotImplementedError
+    version_id = _next_version_id(os.path.join(registry_dir,"models", name))
+    model_dir = _model_dir(registry_dir, name, version_id)
+    
+    os.makedirs(model_dir, exist_ok=True)   # create the directory
+
+    # Read model JSON and copy paste to the registry's 
+    # appropriate directory
+    with open(model_path, "r") as f:
+        model = json.load(f)    # copy from original model .json file
+
+    artifact_path = os.path.join(model_dir, "model.json")
+    with open(artifact_path, "w") as f:
+        json.dump(model, f, indent=2)   # basically pasting from original model .json file
+
+    # Create manifest for this model
+    manifest = {
+        "version_id": version_id,
+        "name": name,
+        "metrics": metrics,
+        "stage": "None",
+        "created_at": _now(),
+    }
+
+    # create the manifest.json file for this model
+    manifest_path = os.path.join(model_dir, "manifest.json")
+    with open(manifest_path, "w") as f:
+        json.dump(manifest, f, indent=2)
+
+    # Return version ID as asked
+    return version_id
 
 
 # ---------------------------------------------------------------------------
