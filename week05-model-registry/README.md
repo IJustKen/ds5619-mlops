@@ -143,4 +143,15 @@ git add -A
 git commit -m "Week 5: model registry governance"
 git tag week05-submit
 git push origin main --tags
+
 ```
+
+## My approach
+
+Implemented a model registry that supports model versioning, artifact storage, model cards, and model promotion. 
+
+Each registered model is assigned a version ID and stored with its manifest and metrics. 
+
+Model cards are validated before being saved, while Production promotion enforces governance rules such as the required model card and minimum F1 score. 
+
+Existing Production versions are automatically archived, and promotion history is maintained as an audit trail.
