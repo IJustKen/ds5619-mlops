@@ -277,5 +277,22 @@ def get_production_model(name, registry_dir):
 
     Return None if no version is currently in Production.
     """
-    # TODO: implement
-    raise NotImplementedError
+    models_dir = os.path.join(registry_dir, "models", name)
+
+    if not os.path.exists(models_dir):  # no such model name exists only
+        return None
+
+    for version_id in os.listdir(models_dir):
+        version_dir = os.path.join(models_dir, version_id)
+        manifest_path = os.path.join(version_dir, "manifest.json")  # get path for each manifest.json file
+
+        if not os.path.isfile(manifest_path):
+            continue    # file does not exist at means we check the next version
+
+        with open(manifest_path, "r") as f:
+            manifest = json.load(f)     
+
+        if manifest.get("stage") == "Production":
+            return manifest     # return the manifest of the model name and version which is in production
+
+    return None     # nothing found so return None
