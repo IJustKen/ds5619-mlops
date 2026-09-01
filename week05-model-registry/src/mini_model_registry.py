@@ -197,8 +197,73 @@ def promote_model(name, version_id, target_stage, registry_dir):
       3. Write the updated manifest.json back to disk.
       4. Return the updated manifest (dict).
     """
-    # TODO: implement
-    raise NotImplementedError
+    # Get this model version's directory and manifest.json file
+    model_dir = _model_dir(registry_dir, name, version_id)
+    manifest_path = os.path.join(model_dir, "manifest.json")
+
+    with open(manifest_path, "r") as f:
+        manifest = json.load(f)
+
+    # Governance checks for promoting to Production
+    if target_stage == "Production":
+
+        # Check (a) model card exists
+        card_path = os.path.join(model_dir, "model_card.json")
+
+        if not os.path.exists(card_path):
+            raise GovernanceError("Production promotion failed - model card file does not exist")
+
+        # Check (b) F1 threshold
+        f1 = manifest["metrics"]["f1"]
+
+        if f1 < PRODUCTION_F1_THRESHOLD:
+            raise GovernanceError(f"Production promotion failed: model's f1 ({f1}) is below "
+                f"the required threshold ({PRODUCTION_F1_THRESHOLD})")
+
+    # If promoting to Production, archive any existing Production version
+    if target_stage == "Production":
+
+        models_dir = os.path.join(registry_dir, "models", name)
+
+        if os.path.exists(models_dir):
+            for other_version in os.listdir(models_dir):
+
+                # Don't archive the version we're promoting
+                if other_version == version_id:
+                    continue
+
+                other_dir = os.path.join(models_dir, other_version)
+                other_manifest_path = os.path.join(other_dir, "manifest.json")
+
+                # Checking if directory even has a manifest
+                if not os.path.isfile(other_manifest_path):
+                    continue
+
+                with open(other_manifest_path, "r") as f:
+                    other_manifest = json.load(f)
+
+                # archive previous production model(s)
+                if other_manifest.get("stage") == "Production":
+                    other_manifest["stage"] = "Archived"
+
+                    with open(other_manifest_path, "w") as f:
+                        json.dump(other_manifest, f, indent=2)
+
+    # Update this version's stage and audit history
+    old_stage = manifest["stage"]
+
+    manifest["stage"] = target_stage
+
+    if "history" not in manifest:   # append a history to the manifest 
+        manifest["history"] = []
+
+    manifest["history"].append({"from_stage": old_stage, "to_stage": target_stage, "at": _now()})
+
+    # Write updated manifest
+    with open(manifest_path, "w") as f:
+        json.dump(manifest, f, indent=2)
+
+    return manifest
 
 
 # ---------------------------------------------------------------------------
