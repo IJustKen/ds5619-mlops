@@ -1,7 +1,7 @@
 # NOTES.md — Week 5: Model Registry Governance
 
 **Student ID used with `generate_for_student.py`:**
-<!-- paste the --student-id value you used -->
+142301038
 
 
 ## Which candidate reached Production, and why?
