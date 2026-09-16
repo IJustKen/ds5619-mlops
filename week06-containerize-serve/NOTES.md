@@ -1,7 +1,7 @@
 # NOTES.md — Week 6: Containerize and Serve a Detector
 
 **Student ID used with `generate_for_student.py`:**
-<!-- paste the --student-id value you used -->
+142301038
 
 
 ## Built image size
