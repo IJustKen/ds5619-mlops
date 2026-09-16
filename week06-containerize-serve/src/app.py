@@ -35,9 +35,14 @@ def load_image_from_upload(file_storage):
     (uploaded images may be non-RGB, e.g. RGBA or palette mode, and the
     detector expects RGB pixel tuples).
     """
-    # TODO: implement
-    raise NotImplementedError
+    raw_bytes = file_storage.read()     # this gets the raw bytes
 
+    wrapped_bytes = io.BytesIO(raw_bytes)       # this converts it into an in-memory file stream format, 
+                                                # which is what Image.open() expects
+
+    pil_img = Image.open(wrapped_bytes)     # convert to PIL image
+
+    return pil_img.convert("RGB")   # convert it to RGB and return it
 
 def run_detection(image):
     """Run the detector on a PIL Image and return a JSON-serializable dict:
@@ -49,8 +54,14 @@ def run_detection(image):
     (image_id=0 is fine — this endpoint handles one image per request, it
     doesn't need a real dataset-wide id.)
     """
-    # TODO: implement
-    raise NotImplementedError
+    det_objects = det.detect(image)     # get list of Detection objects 
+
+    serialized_objects = det.detections_to_coco(det_objects, image_id=0)    # convert to COCO standard so that we can send it over web API
+
+    return {    
+        "count": len(det_objects),  
+        "detections": serialized_objects    # serialized objects is already COCO style, so this overall dict is JSON serializable
+    }
 
 
 def create_app():
