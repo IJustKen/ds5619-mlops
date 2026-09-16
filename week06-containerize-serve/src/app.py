@@ -81,8 +81,14 @@ def create_app():
           run_detection(...) on it, and return jsonify(<that result>) with
           the default 200 status.
         """
-        # TODO: implement
-        raise NotImplementedError
+        if "image" not in request.files:    # check if image key is present in request.files
+            return jsonify({"error": "missing 'image' file field"}), 400    # return error with code 400
+
+        img = load_image_from_upload(request.files["image"])    # else load the image using the previously written function
+
+        serializable_dict = run_detection(img)  # get the JSON serializable dictionary
+
+        return jsonify(serializable_dict), 200  # return after converting to json, and optionally the default 200 code
 
     return app
 
