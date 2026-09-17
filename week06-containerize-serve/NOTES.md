@@ -25,4 +25,5 @@ Download a CPU-only version of torch so that it does not spend time downloading 
 
 ### Option 2: (assuming environment is GPU enabled)
 While a GPU-enabled container will ultimately be large (5-6 GBs) using an official PyTorch base image (using 'FROM pytorch/pytorch' instead of 'FROM python:3.11-slim' and then 'RUN pip install torch') makes it like a cached base layer. 
+
 This prevents re-downloading GBs of dependencies (requirements.txt) during application updates (like if we modify requirements.txt and torch was listed there)
