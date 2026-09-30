@@ -46,9 +46,16 @@ def extract_confidence_scores(camera_dir):
     Use Image.open(path).convert("RGB") to load each image, then
     det.detect(image) to get its detections, and collect d.score from each.
     """
-    # TODO: implement
-    raise NotImplementedError
-
+    imgs = glob.glob(os.path.join(camera_dir, "*.jpg")) # get list of paths of images inside camera_dir with .jpg extension
+    imgs.sort() # sorting alphabetically so that results are deterministic
+    res = []    # stores the confidence scores
+    for img_path in imgs:   # load each image and detect
+        img = Image.open(img_path).convert("RGB")   # open image, convert to RGB
+        detections = det.detect(img)    # run detector and get list of Detection class 
+        for detection in detections:
+            res.append(detection.score)     # to make a flat list just append every score
+    #print(res)
+    return res
 
 # ---------------------------------------------------------------------------
 # Part 2 — Population Stability Index between a reference and live distribution
@@ -70,8 +77,7 @@ def compute_psi(reference_scores, live_scores, n_bins=N_BINS):
       5. Return the PSI value (float). Larger values mean more drift; PSI
          is 0 when the two distributions are identical.
     """
-    # TODO: implement
-    raise NotImplementedError
+    print("PLACEHOLDER")
 
 
 # ---------------------------------------------------------------------------
@@ -86,8 +92,7 @@ def classify_drift(psi):
 
     Return one of those three strings.
     """
-    # TODO: implement
-    raise NotImplementedError
+    print("PLACEHOLDER")
 
 
 # ---------------------------------------------------------------------------
@@ -100,5 +105,4 @@ def summarize_scores(scores):
     count. Use the `statistics` module (mean, stdev — if len(scores) < 2,
     std should be 0.0 rather than raising).
     """
-    # TODO: implement
-    raise NotImplementedError
+    print("PLACEHOLDER")
