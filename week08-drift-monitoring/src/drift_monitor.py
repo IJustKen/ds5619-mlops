@@ -60,7 +60,6 @@ def extract_confidence_scores(camera_dir):
 # ---------------------------------------------------------------------------
 # Part 2 — Population Stability Index between a reference and live distribution
 # ---------------------------------------------------------------------------
-
 def compute_psi(reference_scores, live_scores, n_bins=N_BINS):
     """Compute the Population Stability Index between two lists of scores,
     both assumed to lie in [0.0, 1.0] (confidence scores).
@@ -77,7 +76,44 @@ def compute_psi(reference_scores, live_scores, n_bins=N_BINS):
       5. Return the PSI value (float). Larger values mean more drift; PSI
          is 0 when the two distributions are identical.
     """
-    print("PLACEHOLDER")
+    bin_width = 1.0/n_bins
+
+    ref_counts = [0]*n_bins
+    live_counts = [0]*n_bins
+
+    def bin_idx(score):
+        if score == 1.0:
+            return n_bins-1
+        return int(score/bin_width)
+
+    for score in reference_scores:
+        ref_counts[bin_idx(score)] += 1
+
+    for score in live_scores:
+        live_counts[bin_idx(score)] += 1
+
+    total_ref = len(reference_scores)
+    total_live = len(live_scores)
+
+    psi = 0.0
+
+    for i in range(n_bins):
+        if total_ref > 0:
+            ref_pctg = ref_counts[i]/total_ref
+        else:
+            ref_pctg = 0.0
+
+        if total_live > 0:
+            live_pctg = live_counts[i]/total_live
+        else:
+            live_pctg = 0.0
+
+        ref_pctg = max(ref_pctg, 1e-4)
+        live_pctg = max(live_pctg, 1e-4)
+
+        psi += (live_pctg - ref_pctg) * math.log(live_pctg / ref_pctg)
+
+    return psi
 
 
 # ---------------------------------------------------------------------------
@@ -92,8 +128,12 @@ def classify_drift(psi):
 
     Return one of those three strings.
     """
-    print("PLACEHOLDER")
-
+    if psi < PSI_MODERATE_THRESHOLD:
+        return "none"
+    elif psi < PSI_SIGNIFICANT_THRESHOLD:
+        return "moderate"
+    else:
+        return "significant"
 
 # ---------------------------------------------------------------------------
 # Part 4 — Summary statistics for a score distribution (for the report)
@@ -105,4 +145,25 @@ def summarize_scores(scores):
     count. Use the `statistics` module (mean, stdev — if len(scores) < 2,
     std should be 0.0 rather than raising).
     """
-    print("PLACEHOLDER")
+    count = len(scores)
+
+    if count == 0:
+        return {"count": 0, "mean": 0.0, "std": 0.0, "min": 0.0, "max": 0.0}
+
+    mean_val = statistics.mean(scores)
+    
+    if count >= 2:
+        std_val = statistics.stdev(scores)
+    else:
+        std_val = 0.0
+
+    min_val = min(scores)
+    max_val = max(scores)
+
+    return {
+        "count": count,
+        "mean": round(mean_val, 4),
+        "std": round(std_val, 4),
+        "min": round(min_val, 4),
+        "max": round(max_val, 4)
+    }
