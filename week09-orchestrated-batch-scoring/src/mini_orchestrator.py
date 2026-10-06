@@ -105,9 +105,19 @@ def run_task_with_retry(task: Task, context: dict) -> int:
     it) after all retries are exhausted.
     """
 
-    print("placeholder")
-    return 0
-
+    total_runs = task.max_retries + 1   # total runs would be 1 + max retries
+    
+    for attempt in range(1, total_runs + 1):
+        try:
+            task.fn(context)
+            return attempt
+        
+        except Exception as e:  # catch the exception
+            if attempt == total_runs:   # raise the exception if it is the final run
+                raise e
+            
+            time.sleep(task.retry_delay_seconds)  # else just wait (sleep) to try again
+            
 
 # ---------------------------------------------------------------------------
 # Part 3 — Run the whole DAG
