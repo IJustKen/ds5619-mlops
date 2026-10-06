@@ -140,5 +140,20 @@ def run_dag(tasks: Dict[str, Task], context: dict) -> dict:
 
     Return {"order": <the order you computed>, "task_results": task_results}.
     """
-    print("placeholder")
-    return {}
+    tasks_ordered = topological_order(tasks)  # sort the tasks
+
+    task_results = dict()   # init results dictionary
+
+    for i in range(len(tasks_ordered)):
+        try:
+            attempts = run_task_with_retry(tasks[tasks_ordered[i]], context)
+            task_results[tasks_ordered[i]] = {"status":"success", "attempts":attempts}    # store this upon succe
+        except Exception as e:
+            task_results[tasks_ordered[i]] = {"status":"failed", "attempts":tasks[tasks_ordered[i]].max_retries + 1, "error": str(e)}
+            # store this upon failing, but break after failing, do not continue
+            break            
+    # return the required things, the order of execution and the results of each execution        
+    return {
+        "order":tasks_ordered,
+        "task_results": task_results
+    }
