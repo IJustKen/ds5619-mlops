@@ -47,11 +47,48 @@ def topological_order(tasks: Dict[str, Task]) -> List[str]:
     (decrementing the in-degree of everything that depended on it), and
     append it to the result. If you run out of in-degree-0 tasks before
     placing every task, there's a cycle.
-    """
-    # TODO: implement
-    raise NotImplementedError
+    """ 
+    top_res = []  # final ans
+    in_degree = dict()  # this is -> task : number of tasks it depends on
+    dependencies = dict()   # this is -> task : list of tasks that depend on it
 
+    for key, task in tasks.items():
+      if task.name not in in_degree:
+          in_degree[task.name] = 0
 
+      for dependency in task.depends_on:
+          if dependency not in tasks:
+              raise ValueError("Missing dependency")
+              
+          in_degree[task.name] += 1
+          
+          if dependency not in dependencies:
+              dependencies[dependency] = []
+          dependencies[dependency].append(task.name)
+
+    # storing all the nodes with in-degree 0 to begin Kahn's algo
+    
+    zero_queue = list()
+    for name in in_degree.keys():
+        if in_degree[name] == 0:
+            zero_queue.append(name)
+
+    zeros = len(zero_queue)
+
+    while zero_queue:
+        curr = zero_queue.pop(0)
+        top_res.append(curr)
+        for dep_task in dependencies.get(curr, []):   # in case there are no tasks following curr, it should return empty list
+            in_degree[dep_task] -= 1  # all the nodes that depend on curr should reduce their in degree by one
+            if in_degree[dep_task] == 0:
+                zero_queue.append(dep_task)
+                zeros += 1
+
+    if zeros != len(in_degree):   # case when not all nodes got 0 in degree eventually according to Kahn -> cycle present
+        raise ValueError("Cycle detected in the dependency graph")
+
+    return top_res
+    
 # ---------------------------------------------------------------------------
 # Part 2 — Retry a single task
 # ---------------------------------------------------------------------------
@@ -67,8 +104,9 @@ def run_task_with_retry(task: Task, context: dict) -> int:
     If it never succeeds, let the LAST exception propagate (don't swallow
     it) after all retries are exhausted.
     """
-    # TODO: implement
-    raise NotImplementedError
+
+    print("placeholder")
+    return 0
 
 
 # ---------------------------------------------------------------------------
@@ -92,5 +130,5 @@ def run_dag(tasks: Dict[str, Task], context: dict) -> dict:
 
     Return {"order": <the order you computed>, "task_results": task_results}.
     """
-    # TODO: implement
-    raise NotImplementedError
+    print("placeholder")
+    return {}
