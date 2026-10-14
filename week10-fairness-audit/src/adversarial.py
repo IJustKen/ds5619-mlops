@@ -48,13 +48,15 @@ def perturb_image(img, eps):
     if eps == 0:    # return identical image
         return img.copy()
 
+    img = img.convert("RGB")
+
     r,g,b = img.split() # separate the RGB channels of the given image
 
-    r_pertd = r.point(lambda p: max(0, min(255, p - eps)))
+    r_pertd = r.point(lambda p: max(0, min(255, p - eps)))  # decrease by eps
 
-    g_pertd = g.point(lambda p: max(255, min(255, p + eps)))
+    g_pertd = g.point(lambda p: max(0, min(255, p + eps)))  # rest increase by eps
 
-    b_pertd = b.point(lambda p: max(255, min(255, p + eps)))
+    b_pertd = b.point(lambda p: max(0, min(255, p + eps)))
 
     return Image.merge("RGB", (r_pertd, g_pertd, b_pertd))
 
@@ -108,13 +110,10 @@ def find_most_fragile(attack_stats, eps, top_k=3):
     drops = []
 
     for cat_name, clean_info in clean_stats.items():
-        if cat_name in attack_stats:
-            clean_recall = clean_info["recall"]
-            attack_recall = attack_stats[cat_name]["recall"]
-
-            drop = round(clean_recall - attack_recall, 4)
-
-            drops.append((cat_name, drop))
+        clean_recall = clean_info["recall"]
+        attacked_recall = attacked_stats.get(cat_name, {}).get("recall", 0.0)
+        drop = round(clean_recall - attacked_recall, 4)
+        drops.append((cat_name, drop))
 
     drops.sort(key=lambda x: (-x[1], x[0])) # sort by largetst drop, else alphabetically by category name
 
