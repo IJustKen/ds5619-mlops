@@ -73,9 +73,17 @@ def audit_under_attack(coco_path, fixtures_dir, eps_values=(0, 10, 20, 30, 40),
     Return {eps: category_stats}, where category_stats is exactly what
     audit_by_category returns. eps=0 is the clean audit.
     """
-    # TODO: implement
-    raise NotImplementedError
+    attack_res = {}
 
+    for eps in eps_values:
+
+        def transform_fn(img):
+            return perturb_image(img, eps)
+        
+        stats = fa.audit_by_category(coco_path, fixtures_dir, iou_threshold, transform=transform_fn)
+        attack_res[eps] = stats
+
+    return attack_res
 
 # ---------------------------------------------------------------------------
 # Part 7 — Which classes are the most fragile?
@@ -94,5 +102,20 @@ def find_most_fragile(attack_stats, eps, top_k=3):
     change with the student ID. run_pipeline.py also reports the classes with
     the lowest ABSOLUTE recall under attack; compare the two in NOTES.md.
     """
-    # TODO: implement
-    raise NotImplementedError
+    clean_stats = attack_stats[0]   # to get recall at eps = 0
+    attacked_stats = attack_stats[eps]  # get recall at eps = eps
+
+    drops = []
+
+    for cat_name, clean_info in clean_stats.items():
+        if cat_name in attack_stats:
+            clean_recall = clean_info["recall"]
+            attack_recall = attack_stats[cat_name]["recall"]
+
+            drop = round(clean_recall - attack_recall, 4)
+
+            drops.append((cat_name, drop))
+
+    drops.sort(key=lambda x: (-x[1], x[0])) # sort by largetst drop, else alphabetically by category name
+
+    return drops[:top_k]
