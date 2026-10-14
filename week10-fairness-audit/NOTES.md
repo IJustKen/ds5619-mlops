@@ -1,7 +1,7 @@
 # NOTES.md — Week 10: Fairness and Robustness Audit
 
 **Student ID used with `generate_for_student.py`:**
-<!-- paste the --student-id value you used -->
+142301038
 
 
 ## Which classes got flagged?
