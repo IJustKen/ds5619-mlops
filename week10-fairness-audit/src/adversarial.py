@@ -45,8 +45,19 @@ def perturb_image(img, eps):
     function to every value of a single-channel image; Image.merge("RGB",
     ...) puts them back. No per-pixel Python loop is needed.
     """
-    # TODO: implement
-    raise NotImplementedError
+    if eps == 0:    # return identical image
+        return img.copy()
+
+    r,g,b = img.split() # separate the RGB channels of the given image
+
+    r_pertd = r.point(lambda p: max(0, min(255, p - eps)))
+
+    g_pertd = g.point(lambda p: max(255, min(255, p + eps)))
+
+    b_pertd = b.point(lambda p: max(255, min(255, p + eps)))
+
+    return Image.merge("RGB", (r_pertd, g_pertd, b_pertd))
+
 
 
 # ---------------------------------------------------------------------------
