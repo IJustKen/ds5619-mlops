@@ -57,8 +57,34 @@ def compute_iou(box_a, box_b):
       4. union_area = area(box_a) + area(box_b) - intersection_area
       5. Return intersection_area / union_area, or 0.0 if union_area is 0.
     """
-    # TODO: implement
-    raise NotImplementedError
+    xa, ya, wa, ha = box_a
+    xb, yb, wb, hb = box_b
+
+    # convert to 2 opposite corner form
+
+    xa1, ya1, xa2, ya2 = xa, ya, xa + wa, ya + ha
+    xb1, yb1, xb2, yb2 = xb, yb, xb + wb, yb + hb
+
+    # get intersection rectangle coordinates, this is with x()1, y()1 being the bottom left corner
+    x1 = max(xa1, xb1)
+    x2 = min(xa2, xb2)
+    y1 = max(ya1, yb1)
+    y2 = min(ya2, yb2)
+
+    w_inter = max(0.0, x2 - x1)
+    h_inter = max(0.0, y2 - y1)
+
+    inter_area = w_inter * h_inter
+
+    area_a = wa*ha  # area of individual boxes
+    area_b = wb*hb
+    union_area = area_a + area_b - inter_area   # get area of the union of the 2 boxes
+
+    if union_area <= 0: # avoid div by zero
+        return 0.0
+    
+    return inter_area/union_area
+
 
 
 # ---------------------------------------------------------------------------
