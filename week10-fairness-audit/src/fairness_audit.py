@@ -104,8 +104,20 @@ def match_ground_truth(gt_boxes, detections, iou_threshold=0.3):
     detection CAN count as a match for more than one ground-truth box if it
     happens to overlap both (rare with real data, fine for this audit).
     """
-    # TODO: implement
-    raise NotImplementedError
+    matched = []    # store matches here
+
+    for gt in gt_boxes:
+
+        is_hit = False
+
+        for d in detections:
+            if compute_iou(gt, d.bbox) >= iou_threshold:    # to see if the gt box and detection box match above a threshold
+                is_hit = True
+                break
+
+        matched.append(is_hit)  # append the boolean value to the result list
+
+    return matched
 
 
 # ---------------------------------------------------------------------------
@@ -137,8 +149,66 @@ def audit_by_category(coco_path, fixtures_dir, iou_threshold=0.3, transform=None
     lookup from category_id -> category name, before the main loop. Image
     file paths are `os.path.join(fixtures_dir, image["file_name"])`.
     """
-    # TODO: implement
-    raise NotImplementedError
+    # load the coco json
+    with open(coco_path, "r", encoding="utf-8") as f:
+        coco_data = json.load(f)
+
+    # Lookup table mapping category_id --> category_name
+    cat_id_to_name = {cat["id"]: cat["name"] for cat in coco_data.get("categories", [])}
+
+    # Lookup table mapping image_id --> list of annotations
+    img_id_to_anns = defaultdict(list)
+
+    for ann in coco_data.get("annotations", []):
+        img_id_to_anns[ann["image_id"]].append(ann)
+
+    # Structure to accumulate stats per category_name
+    stats_acc = defaultdict(lambda: {"total": 0, "detected": 0})
+
+    for img_info in coco_data.get("images", []):
+        image_path = os.path.join(fixtures_dir, img_info["file_name"])
+
+        if not os.path.exists(image_path):  # in case image does not exist, move on
+            continue
+
+        with Image.open(image_path) as img:
+            img_rgb = img.convert("RGB")    # convert to RGB to standardize
+            if transform is not None:   # if a transformation is given
+                img_rgb = transform(img_rgb)
+            
+            detections = det.detect(img_rgb)    # use detector
+
+        anns = img_id_to_anns.get(img_info["id"], [])   # get annotations
+        
+        # Group annotations by category_id for this image
+        anns_by_cat = defaultdict(list)
+        for ann in anns:
+            anns_by_cat[ann["category_id"]].append(ann["bbox"])
+
+        for cat_id, gt_boxes in anns_by_cat.items():
+            cat_name = cat_id_to_name.get(cat_id)
+
+            if not cat_name:
+                continue
+
+            matches = match_ground_truth(gt_boxes, detections, iou_threshold=iou_threshold)
+            stats_acc[cat_name]["total"] += len(gt_boxes)
+            stats_acc[cat_name]["detected"] += sum(matches)
+
+    results = {}
+    for cat_name, counts in stats_acc.items():
+        total = counts["total"]
+        if total == 0:
+            continue
+        detected = counts["detected"]
+        recall = round(detected / total, 4)
+        results[cat_name] = {
+            "total": total,
+            "detected": detected,
+            "recall": recall
+        }
+
+    return results
 
 
 # ---------------------------------------------------------------------------
@@ -152,5 +222,12 @@ def find_underperforming_categories(category_stats, recall_threshold=0.90):
     whose recall is BELOW recall_threshold, sorted worst-first (lowest
     recall first).
     """
-    # TODO: implement
-    raise NotImplementedError
+    underperforming = []
+
+    for cat_name, info in category_stats.items():
+        if info["recall"] < recall_threshold:
+            underperforming.append((cat_name, info["recall"]))
+
+    # Sort worst-first (lowest recall first)
+    underperforming.sort(key=lambda x: x[1])    # by default this sorts by ascending order
+    return underperforming
