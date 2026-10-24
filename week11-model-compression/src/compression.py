@@ -45,7 +45,7 @@ def model_size_bytes(weights, dtype_bytes):
     stored using `dtype_bytes` bytes each (4 for FP32, 2 for FP16, 1 for
     INT8 — this week's "bits per parameter" framing, applied literally).
     """
-    return len(weights)*dtype_bytes
+    return len(weights)*dtype_bytes     # simple product of number of weights times its size in bytes
 
 
 # ---------------------------------------------------------------------------
@@ -65,7 +65,7 @@ def prune_weights(weights, sparsity):
       3. Return a copy of `weights` with those indices set to 0.0 (don't
          mutate the input list).
     """
-    n_prune = int(sparsity * len(weights))  # weights to prune out
+    n_prune = int(sparsity * len(weights))  # number of weights to prune out
 
     if n_prune <= 0:
         return list(weights)        # new list, but with the same values
@@ -79,6 +79,7 @@ def prune_weights(weights, sparsity):
     # the first (smallest) n_prune weights get pruned
     prune_indices = sorted_indices[:n_prune]
 
+    # pruned dense list
     res = [0.0 if i in prune_indices else weights[i] for i in range(len(weights))]
 
     return res
@@ -138,12 +139,12 @@ def quantize_int8(weights):
     if max_abs == 0.0:
         return [0]*len(weights), 1.0    # set scale to 1.0 and return all 0s
 
-    scale = max_abs / 127.0     # otherwise we get scale
+    scale = max_abs / 127.0     # otherwise we get scale like this
 
     quantized_wts = []
 
     for w in weights:
-        q = round(w / scale)
+        q = round(w / scale)    # divide each weight by the scale value so that we can recover it later during dequantization, when we multiply by scale
 
         q_clamped = max(-127, min(127, q))  # clamp to -127, 127
 
@@ -178,8 +179,9 @@ def benchmark_model(label, weights, eval_examples, dtype_bytes, n_latency_reps=5
         1 if predict(weights, row["features"]) == row["label"]
         else 0
         for row in eval_examples
-    ])
+    ])      # get number of correct predictions
 
+    # total correct predictions / total predictions
     accuracy = round(correct_pred / len(eval_examples), 4) if eval_examples else 0.0
 
     # latency calculation
@@ -187,18 +189,19 @@ def benchmark_model(label, weights, eval_examples, dtype_bytes, n_latency_reps=5
     time_passed = 0.0   # track total time passed in n_latency_reps repetitions
 
     for i in range(n_latency_reps):
-        t0 = time.perf_counter()
+        t0 = time.perf_counter()    # start time
 
         for row in eval_examples:
-            predict(weights, row["features"])
+            predict(weights, row["features"])   # perform the prediction calculation
 
-        t1 = time.perf_counter()
+        t1 = time.perf_counter()    # end time
 
-        time_passed += (t1 - t0)    # add time passed in this rep
+        time_passed += (t1 - t0)    # add the seconds passed in this rep
 
     # get average over n_latency_reps and convert s to ms
     avg_time_passed = (time_passed / n_latency_reps) * 1000.0
 
+    # return everything calculated along with the label
     return {
         "label":label,
         "size_bytes": model_size_bytes(weights, dtype_bytes),
