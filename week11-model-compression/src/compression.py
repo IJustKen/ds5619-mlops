@@ -101,9 +101,11 @@ def sparse_coo_size_bytes(weights, value_bytes=4, index_bytes=4):
     while enough weights are zero to pay for the extra index on every
     survivor.
     """
-    # TODO: implement
-    raise NotImplementedError
+    # get total count of non zero weights (not pruned weights)
+    non_zero_wts = sum([1 if weights[i] != 0.0 else 0 for i in range(len(weights))])
 
+    # return total bytes occupied by both the value and its corresponding index for the sparse representation
+    return non_zero_wts * (value_bytes + index_bytes)
 
 # ---------------------------------------------------------------------------
 # Part 3 — Symmetric INT8 quantization
@@ -129,8 +131,25 @@ def quantize_int8(weights):
 
     (dequantize_int8, given above, reverses this: w_approx = q * scale.)
     """
-    # TODO: implement
-    raise NotImplementedError
+    # get the maximum abs weight
+    max_abs = max(abs(w) for w in weights) if weights else 0.0
+
+    # case when all weights are 0, or when weights is empty
+    if max_abs == 0.0:
+        return [0]*len(weights), 1.0    # set scale to 1.0 and return all 0s
+
+    scale = max_abs / 127.0     # otherwise we get scale
+
+    quantized_wts = []
+
+    for w in weights:
+        q = round(w / scale)
+
+        q_clamped = max(-127, min(127, q))  # clamp to -127, 127
+
+        quantized_wts.append(q_clamped)
+
+    return quantized_wts, scale
 
 
 # ---------------------------------------------------------------------------
@@ -155,5 +174,34 @@ def benchmark_model(label, weights, eval_examples, dtype_bytes, n_latency_reps=5
     time.perf_counter() before/after each pass), sum the per-pass times,
     divide by n_latency_reps, and convert seconds -> milliseconds.
     """
-    # TODO: implement
-    raise NotImplementedError
+    correct_pred = sum([
+        1 if predict(weights, row["features"]) == row["label"]
+        else 0
+        for row in eval_examples
+    ])
+
+    accuracy = round(correct_pred / len(eval_examples), 4) if eval_examples else 0.0
+
+    # latency calculation
+
+    time_passed = 0.0   # track total time passed in n_latency_reps repetitions
+
+    for i in range(n_latency_reps):
+        t0 = time.perf_counter()
+
+        for row in eval_examples:
+            predict(weights, row["features"])
+
+        t1 = time.perf_counter()
+
+        time_passed += (t1 - t0)    # add time passed in this rep
+
+    # get average over n_latency_reps and convert s to ms
+    avg_time_passed = (time_passed / n_latency_reps) * 1000.0
+
+    return {
+        "label":label,
+        "size_bytes": model_size_bytes(weights, dtype_bytes),
+        "accuracy": accuracy,
+        "latency_ms_per_pass": round(avg_time_passed, 4),
+    }
