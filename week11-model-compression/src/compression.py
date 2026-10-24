@@ -15,6 +15,7 @@ Fill in the five functions marked # TODO. `dequantize_int8` and `predict`
 are given.
 """
 import time
+import math
 
 # ---------------------------------------------------------------------------
 # Given: prediction and dequantization
@@ -44,8 +45,7 @@ def model_size_bytes(weights, dtype_bytes):
     stored using `dtype_bytes` bytes each (4 for FP32, 2 for FP16, 1 for
     INT8 — this week's "bits per parameter" framing, applied literally).
     """
-    # TODO: implement
-    raise NotImplementedError
+    return len(weights)*dtype_bytes
 
 
 # ---------------------------------------------------------------------------
@@ -65,8 +65,23 @@ def prune_weights(weights, sparsity):
       3. Return a copy of `weights` with those indices set to 0.0 (don't
          mutate the input list).
     """
-    # TODO: implement
-    raise NotImplementedError
+    n_prune = int(sparsity * len(weights))  # weights to prune out
+
+    if n_prune <= 0:
+        return list(weights)        # new list, but with the same values
+    
+    if n_prune >= len(weights):
+        return [0.0] * len(weights)     # all pruned
+
+    # get range/list of indices and sort by the absolute weight in weights
+    sorted_indices = sorted(range(len(weights)), key=lambda x: abs(weights[x]))
+
+    # the first (smallest) n_prune weights get pruned
+    prune_indices = sorted_indices[:n_prune]
+
+    res = [0.0 if i in prune_indices else weights[i] for i in range(len(weights))]
+
+    return res
 
 
 # ---------------------------------------------------------------------------
