@@ -27,7 +27,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import compression as comp
 
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-PRUNE_SPARSITY = 0.70
+PRUNE_SPARSITY = 0.95
 
 
 def main():

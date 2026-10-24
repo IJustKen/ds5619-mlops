@@ -1,34 +1,34 @@
 {
-  "prune_sparsity": 0.7,
+  "prune_sparsity": 0.95,
   "n_weights": 256,
-  "n_nonzero_after_pruning": 77,
+  "n_nonzero_after_pruning": 13,
   "results": [
     {
       "label": "baseline_fp32",
       "size_bytes": 1024,
       "accuracy": 1.0,
-      "latency_ms_per_pass": 9.552,
+      "latency_ms_per_pass": 9.3634,
       "compression_ratio_vs_baseline": 1.0
     },
     {
       "label": "pruned_dense_fp32",
       "size_bytes": 1024,
-      "accuracy": 0.99,
-      "latency_ms_per_pass": 10.8582,
+      "accuracy": 0.79,
+      "latency_ms_per_pass": 12.9975,
       "compression_ratio_vs_baseline": 1.0
     },
     {
       "label": "pruned_sparse_coo",
-      "size_bytes": 616,
-      "accuracy": 0.99,
-      "latency_ms_per_pass": 10.8582,
-      "compression_ratio_vs_baseline": 1.66
+      "size_bytes": 104,
+      "accuracy": 0.79,
+      "latency_ms_per_pass": 12.9975,
+      "compression_ratio_vs_baseline": 9.85
     },
     {
       "label": "quantized_int8",
       "size_bytes": 256,
       "accuracy": 0.9933,
-      "latency_ms_per_pass": 8.9665,
+      "latency_ms_per_pass": 10.6866,
       "compression_ratio_vs_baseline": 4.0
     }
   ]
